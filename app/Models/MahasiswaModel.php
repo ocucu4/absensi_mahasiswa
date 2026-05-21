@@ -10,6 +10,7 @@ class MahasiswaModel extends Model
     protected $primaryKey = 'id_mahasiswa';
 
     protected $allowedFields = [
+        
         'npm',
         'nama',
         'kelas',
@@ -17,6 +18,7 @@ class MahasiswaModel extends Model
         'jenis_kelamin',
         'id_jurusan',
         'id_user',
+
     ];
 
     protected $returnType = 'array';
