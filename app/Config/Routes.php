@@ -7,6 +7,11 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::index');
 
+// Auth routes
+$routes->post('register', 'Auth::register');
+$routes->post('login',    'Auth::login');
+$routes->post('logout',   'Auth::logout');
+
 // Dosen routes
 $routes->get('dosen',            'Dosen::index');
 $routes->get('dosen/(:num)',     'Dosen::show/$1');
