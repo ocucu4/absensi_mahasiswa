@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use CodeIgniter\RESTful\ResourceController;
 use App\Models\UserModel;
+use App\Models\DosenModel;
+use App\Models\MahasiswaModel;
 
 class Auth extends ResourceController
 {
@@ -44,6 +46,95 @@ class Auth extends ResourceController
             return $this->failValidationErrors($validation->getErrors());
         }
 
+        // Kalau role dosen → wajib input NIDN dan cek di tabel dosen
+        if ($input['role'] === 'dosen') {
+            if (empty($input['nidn'])) {
+                return $this->failValidationErrors('NIDN wajib diisi untuk role dosen.');
+            }
+
+            $dosenModel = new DosenModel();
+            $dosen = $dosenModel->where('nidn', $input['nidn'])->first();
+
+            if (!$dosen) {
+                return $this->failValidationErrors('NIDN tidak ditemukan. Hubungi admin untuk mendaftarkan data dosen.');
+            }
+
+            if ($dosen['id_user'] !== null) {
+                return $this->failValidationErrors('NIDN ini sudah memiliki akun.');
+            }
+
+            // Buat akun user
+            $data = [
+                'username' => $input['username'],
+                'password' => password_hash($input['password'], PASSWORD_DEFAULT),
+                'role'     => $input['role'],
+            ];
+
+            $model->insert($data);
+            $id_user = $model->getInsertID();
+
+            // Update id_user di tabel dosen
+            $dosenModel->update($dosen['id_dosen'], [
+                'id_user' => $id_user,
+            ]);
+
+            return $this->respondCreated([
+                'status'  => 201,
+                'message' => 'Registrasi dosen berhasil',
+                'data'    => [
+                    'id_user'  => $id_user,
+                    'username' => $input['username'],
+                    'role'     => $input['role'],
+                    'nidn'     => $input['nidn'],
+                ],
+            ]);
+        }
+
+        // Kalau role mahasiswa → wajib input NPM dan cek di tabel mahasiswa
+        if ($input['role'] === 'mahasiswa') {
+            if (empty($input['npm'])) {
+                return $this->failValidationErrors('NPM wajib diisi untuk role mahasiswa.');
+            }
+
+            $mahasiswaModel = new MahasiswaModel();
+            $mahasiswa = $mahasiswaModel->where('npm', $input['npm'])->first();
+
+            if (!$mahasiswa) {
+                return $this->failValidationErrors('NPM tidak ditemukan. Hubungi admin untuk mendaftarkan data mahasiswa.');
+            }
+
+            if ($mahasiswa['id_user'] !== null) {
+                return $this->failValidationErrors('NPM ini sudah memiliki akun.');
+            }
+
+            // Buat akun user
+            $data = [
+                'username' => $input['username'],
+                'password' => password_hash($input['password'], PASSWORD_DEFAULT),
+                'role'     => $input['role'],
+            ];
+
+            $model->insert($data);
+            $id_user = $model->getInsertID();
+
+            // Update id_user di tabel mahasiswa
+            $mahasiswaModel->update($mahasiswa['id_mahasiswa'], [
+                'id_user' => $id_user,
+            ]);
+
+            return $this->respondCreated([
+                'status'  => 201,
+                'message' => 'Registrasi mahasiswa berhasil',
+                'data'    => [
+                    'id_user'  => $id_user,
+                    'username' => $input['username'],
+                    'role'     => $input['role'],
+                    'npm'      => $input['npm'],
+                ],
+            ]);
+        }
+
+        // Kalau role admin → langsung buat akun
         $data = [
             'username' => $input['username'],
             'password' => password_hash($input['password'], PASSWORD_DEFAULT),
@@ -55,7 +146,7 @@ class Auth extends ResourceController
 
         return $this->respondCreated([
             'status'  => 201,
-            'message' => 'Registrasi berhasil',
+            'message' => 'Registrasi admin berhasil',
             'data'    => [
                 'id_user'  => $id,
                 'username' => $input['username'],
@@ -108,7 +199,7 @@ class Auth extends ResourceController
 
     public function logout()
     {
-        $model     = new UserModel();
+        $model      = new UserModel();
         $authHeader = $this->request->getHeaderLine('Authorization');
 
         if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {

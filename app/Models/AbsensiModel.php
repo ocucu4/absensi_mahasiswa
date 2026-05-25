@@ -14,7 +14,6 @@ class AbsensiModel extends Model
         'tanggal',
         'status',
         'jam_absen',
-        'keterangan',
         'id_kelas_kuliah',
     ];
 

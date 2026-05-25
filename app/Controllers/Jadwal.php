@@ -29,6 +29,55 @@ class Jadwal extends ResourceController
         return $this->respond($data);
     }
 
+    // Jadwal per dosen
+    public function jadwalDosen($id_dosen = null)
+    {
+        $db = \Config\Database::connect();
+    
+        $data = $db->table('jadwal')
+            ->select('jadwal.id_jadwal, jadwal.kelas, jadwal.hari')
+            ->select('jadwal.jam_mulai, jadwal.jam_selesai, jadwal.ruangan')
+            ->select('jadwal.tahun_ajaran, jadwal.semester')
+            ->select('mata_kuliah.nama_matkul, mata_kuliah.kode_matkul')
+            ->select('dosen.nama_dosen, dosen.nidn')
+            ->join('mata_kuliah', 'mata_kuliah.id_matkul = jadwal.id_matkul', 'left')
+            ->join('dosen', 'dosen.id_dosen = jadwal.id_dosen', 'left')
+            ->where('jadwal.id_dosen', $id_dosen)
+            ->get()
+            ->getResultArray();
+    
+        if (empty($data)) {
+            return $this->failNotFound('Jadwal tidak ditemukan untuk dosen ini');
+        }
+    
+        return $this->respond($data);
+    }
+    
+    // Jadwal per mahasiswa
+    public function jadwalMahasiswa($id_mahasiswa = null)
+    {
+        $db = \Config\Database::connect();
+    
+        $data = $db->table('kelas_kuliah')
+            ->select('jadwal.id_jadwal, jadwal.kelas, jadwal.hari')
+            ->select('jadwal.jam_mulai, jadwal.jam_selesai, jadwal.ruangan')
+            ->select('jadwal.tahun_ajaran, jadwal.semester')
+            ->select('mata_kuliah.nama_matkul, mata_kuliah.kode_matkul')
+            ->select('dosen.nama_dosen, dosen.nidn')
+            ->join('jadwal', 'jadwal.id_jadwal = kelas_kuliah.id_jadwal', 'left')
+            ->join('mata_kuliah', 'mata_kuliah.id_matkul = jadwal.id_matkul', 'left')
+            ->join('dosen', 'dosen.id_dosen = jadwal.id_dosen', 'left')
+            ->where('kelas_kuliah.id_mahasiswa', $id_mahasiswa)
+            ->get()
+            ->getResultArray();
+    
+        if (empty($data)) {
+            return $this->failNotFound('Jadwal tidak ditemukan untuk mahasiswa ini');
+        }
+    
+        return $this->respond($data);
+    }
+
     public function show($id = null)
     {
         $db = \Config\Database::connect();
